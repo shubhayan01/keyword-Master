@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Keyword Automation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #151515;
+    --border: #2a2a2a;
+    --accent: #00ff88;
+    --accent2: #ff6b35;
+    --text: #e8e8e8;
+    --muted: #666;
+    --warn: #ffcc00;
+    --danger: #ff4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .badge {
+    background: var(--accent);
+    color: #000;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    letter-spacing: 0.08em;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 49px);
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], input[type="password"], textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 10px;
+    outline: none;
+    resize: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, textarea:focus { border-color: var(--accent); }
+
+  textarea { height: 160px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 9px 16px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.15s;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger); color: #fff; }
+
+  .kw-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .kw-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    margin-bottom: 3px;
+    cursor: pointer;
+    transition: all 0.1s;
+    user-select: none;
+  }
+
+  .kw-item:hover { border-color: var(--border); }
+  .kw-item.selected { border-color: var(--accent); background: rgba(0,255,136,0.05); }
+  .kw-item.flagged { opacity: 0.4; cursor: not-allowed; }
+
+  .kw-text {
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kw-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 5px;
+    letter-spacing: 0.06em;
+  }
+
+  .tag-ok { background: rgba(0,255,136,0.15); color: var(--accent); }
+  .tag-company { background: rgba(255,68,68,0.15); color: var(--danger); }
+  .tag-generic { background: rgba(255,204,0,0.15); color: var(--warn); }
+
+  .main {
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .status-bar {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* SERP */
+  .serp-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .serp-item:last-child { border-bottom: none; }
+  .serp-pos { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; color: var(--accent); min-width: 32px; }
+  .serp-row { display: flex; gap: 14px; align-items: flex-start; }
+  .serp-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+  .serp-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent2); margin-bottom: 5px; }
+  .serp-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Variations */
+  .pill-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: default;
+    transition: border-color 0.15s;
+  }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill-type {
+    font-size: 9px;
+    color: var(--muted);
+    display: block;
+    margin-top: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  /* Blog cluster */
+  .cluster-parent {
+    background: rgba(0,255,136,0.08);
+    border: 1px solid var(--accent);
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+  .cluster-parent-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+  .cluster-parent-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .cluster-parent-meta span { color: var(--accent); }
+  .cluster-parent-angle {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    border-left: 2px solid var(--accent);
+    padding-left: 8px;
+    margin-top: 6px;
+  }
+  .cluster-children-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .cluster-child {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    transition: border-color 0.15s;
+  }
+  .cluster-child:hover { border-color: var(--accent); }
+  .cluster-child-title { font-weight: 600; margin-bottom: 4px; font-size: 12px; }
+  .cluster-child-slug {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    margin-bottom: 4px;
+  }
+  .cluster-child-angle { font-size: 11px; color: var(--muted); margin-bottom: 6px; font-style: italic; }
+  .cluster-child-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .cluster-child-meta span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+  }
+  .cluster-child-anchor {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+  .cluster-child-anchor em { color: var(--accent); font-style: normal; }
+
+  /* Competitors */
+  .comp-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .comp-item:last-child { border-bottom: none; }
+  .comp-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .comp-rank {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: #000;
+    background: var(--accent);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .comp-rank.r2 { background: #aaa; }
+  .comp-rank.r3 { background: #cd7c3d; }
+  .comp-domain { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent2); }
+  .comp-title-text { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .comp-label { font-size: 9px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; }
+  .comp-val { font-size: 11px; line-height: 1.5; color: var(--text); }
+  .comp-val.gap { color: var(--accent); }
+
+  /* FAQ */
+  .faq-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q { font-weight: 600; font-size: 13px; margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .faq-a { font-size: 12px; color: var(--muted); line-height: 1.6; display: none; padding-top: 4px; }
+  .faq-item.open .faq-a { display: block; }
+  .faq-item.open .faq-q { color: var(--accent); }
+
+  /* H2 */
+  .h2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .h2-card { border: 1px solid var(--border); padding: 12px; }
+  .h2-zone { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--accent2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .h2-heading { font-weight: 600; font-size: 13px; margin-bottom: 5px; }
+  .h2-purpose { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .h2-points { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .h2-point {
+    font-size: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .h2-wc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent); }
+
+  /* Recs */
+  .rec-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; line-height: 1.5; align-items: flex-start; }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); min-width: 20px; }
+  .priority-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .prio-Critical { background: rgba(255,68,68,0.15); color: var(--danger); }
+  .prio-High     { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .prio-Medium   { background: rgba(255,204,0,0.15); color: var(--warn); }
+  .prio-Low      { background: rgba(0,255,136,0.15); color: var(--accent); }
+
+  /* Meta */
+  .meta-box { background: var(--bg); border: 1px solid var(--border); padding: 10px 14px; margin-bottom: 8px; }
+  .meta-box .meta-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .meta-box .meta-val { font-size: 13px; }
+  .meta-box .meta-slug { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent2); }
+
+  .intent-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-left: 8px;
+  }
+  .intent-informational { background: rgba(0,255,136,0.15); color: var(--accent); }
+  .intent-transactional { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .intent-commercial    { background: rgba(255,204,0,0.15); color: var(--warn); }
+  .intent-navigational  { background: rgba(100,100,255,0.15); color: #8888ff; }
+
+  /* Scores row */
+  .scores-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .score-box {
+    flex: 1;
+    padding: 12px 14px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .score-box:last-child { border-right: none; }
+  .score-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .score-val { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; }
+  .score-val.red    { color: var(--danger); }
+  .score-val.orange { color: var(--accent2); }
+  .score-val.green  { color: var(--accent); }
+  .score-val.blue   { color: #6699ff; }
+  .score-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* On-page / off-page / timeline (sidebar-style cards) */
+  .mini-section { margin-bottom: 16px; }
+  .mini-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .chip.accent { border-color: var(--accent); color: var(--accent); }
+  .chip.accent2 { border-color: var(--accent2); color: var(--accent2); }
+
+  .tactic-item {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+  .tactic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .tactic-name { font-size: 12px; font-weight: 600; }
+  .tactic-badges { display: flex; gap: 5px; }
+  .tactic-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  .timeline-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .tl-period {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    min-width: 80px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .tl-text { color: var(--muted); line-height: 1.5; font-size: 11px; }
+
+  .captcha-alert {
+    background: rgba(255,204,0,0.1);
+    border: 1px solid var(--warn);
+    padding: 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Print button */
+  .print-btn {
+    float: right;
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .print-btn:hover { background: rgba(0,255,136,0.1); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* ── TABS ── */
+  .tab-row { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .tab-btn {
+    flex:1; background:none; border:none;
+    border-bottom:2px solid transparent;
+    font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600;
+    color:var(--muted); padding:10px 0; cursor:pointer;
+    letter-spacing:0.1em; text-transform:uppercase;
+    transition:all 0.15s; margin-bottom:-1px;
+  }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab-panel { display:none; flex-direction:column; flex:1; overflow:hidden; min-height:0; }
+  .tab-panel.active { display:flex; }
+
+  /* DataForSEO credentials panel */
+  .dfs-toggle {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 16px; cursor:pointer; border-bottom:1px solid var(--border);
+    user-select:none;
+  }
+  .dfs-toggle:hover { background:rgba(255,255,255,0.02); }
+  .dfs-toggle-lbl {
+    font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted);
+    letter-spacing:0.1em; text-transform:uppercase;
+    display:flex; align-items:center; gap:6px;
+  }
+  .dfs-status-dot { width:5px; height:5px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .dfs-status-dot.connected { background:var(--accent); }
+  .dfs-chevron { font-size:9px; color:var(--muted); transition:transform 0.2s; }
+  .dfs-body { display:none; padding:10px 16px 12px; border-bottom:1px solid var(--border); background:var(--surface); }
+  .dfs-body.open { display:block; }
+  .dfs-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px; }
+  .dfs-field-lbl { display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px; }
+
+  /* Site audit sidebar */
+  .audit-blog-list { flex:1; overflow-y:auto; padding:4px 8px; }
+  .audit-url-item {
+    font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent2);
+    padding:3px 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    border-bottom:1px solid var(--border); display:block;
+  }
+  .audit-url-item:last-child { border-bottom:none; }
+  .audit-url-item:hover { color:var(--accent); background:rgba(0,255,136,0.04); }
+
+  /* Strategy box */
+  .strategy-box {
+    background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25);
+    padding:12px 14px; font-size:12px; color:var(--text); line-height:1.6;
+    margin-bottom:16px;
+  }
+  .strategy-box strong {
+    color:var(--accent); font-style:normal;
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    letter-spacing:0.1em; text-transform:uppercase;
+    display:block; margin-bottom:4px;
+  }
+
+  /* Coverage categories */
+  .cov-cat {
+    padding:8px 10px; border-left:2px solid var(--border);
+    margin-bottom:6px; cursor:pointer; transition:border-color 0.15s;
+  }
+  .cov-cat:hover, .cov-cat.expanded { border-left-color:var(--accent); }
+  .cov-cat-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+  .cov-cat-name { font-size:12px; font-weight:600; }
+  .cov-cat-count { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent); }
+  .cov-cat-summary { font-size:11px; color:var(--muted); line-height:1.4; }
+  .cov-cat-urls { display:none; margin-top:6px; padding-top:4px; border-top:1px solid var(--border); }
+  .cov-cat.expanded .cov-cat-urls { display:block; }
+  .cov-url { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent2); padding:2px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+  .cov-url:hover { color:var(--accent); }
+
+  /* Gap cards */
+  .gap-item { padding:14px; border:1px solid var(--border); margin-bottom:10px; transition:border-color 0.15s; }
+  .gap-item:hover { border-color:rgba(0,255,136,0.3); }
+  .gap-header { display:flex; align-items:flex-start; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .gap-topic { font-weight:600; font-size:13px; flex:1; min-width:0; }
+  .gap-type { font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 7px; border:1px solid var(--border); color:var(--muted); white-space:nowrap; }
+  .gap-rationale { font-size:11px; color:var(--muted); line-height:1.55; margin-bottom:8px; }
+  .gap-kw-row { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+  .gap-kw {
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    padding:4px 9px; border:1px solid var(--border);
+    cursor:pointer; transition:all 0.1s;
+    display:inline-flex; align-items:center; gap:5px; line-height:1;
+  }
+  .gap-kw:hover { border-color:var(--accent); color:var(--accent); }
+  .gap-kw.has-metrics { border-color:rgba(255,107,53,0.4); }
+  .gap-kw .kw-vol { font-size:9px; color:var(--accent2); }
+  .gap-kw .kw-kd  { font-size:9px; color:var(--warn); }
+  .gap-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .gap-btn {
+    font-family:'IBM Plex Mono',monospace; font-size:9px;
+    padding:3px 9px; border:1px solid var(--border);
+    background:var(--surface); color:var(--muted);
+    cursor:pointer; letter-spacing:0.05em; transition:all 0.1s;
+  }
+  .gap-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .gap-btn.accent-btn { border-color:var(--accent); color:var(--accent); }
+  .gap-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* Audit stats row */
+  .audit-stats-row { display:flex; gap:0; border:1px solid var(--border); margin-bottom:16px; flex-wrap:wrap; }
+  .audit-stat { flex:1; min-width:90px; padding:10px 12px; border-right:1px solid var(--border); text-align:center; }
+  .audit-stat:last-child { border-right:none; }
+
+  /* ── PRINT ── */
+  @media print {
+    @page { size: A4; margin: 14mm 12mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    header, .sidebar, .print-btn { display: none !important; }
+    body { background: #fff; color: #111; font-size: 9pt; }
+    .layout { display: block; height: auto; }
+    .main { padding: 0; overflow: visible; }
+    .card { border: 1px solid #ccc; margin-bottom: 10pt; page-break-inside: avoid; break-inside: avoid; background: #fff; }
+    .section-title { color: #444; border-color: #ccc; }
+    .scores-row { border-color: #ccc; }
+    .score-box { border-color: #ccc; }
+    .score-val.red    { color: #cc0000 !important; }
+    .score-val.orange { color: #cc5500 !important; }
+    .score-val.green  { color: #007700 !important; }
+    .score-val.blue   { color: #0044cc !important; }
+    .two-col, .three-col { display: block; }
+    .two-col > *, .three-col > * { margin-bottom: 10pt; }
+    .h2-grid { grid-template-columns: 1fr 1fr; }
+    .cluster-children-grid { grid-template-columns: 1fr 1fr; }
+    .comp-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .status-bar, .captcha-alert { display: none !important; }
+    .faq-a { display: block !important; }
+    .meta-box { background: #f9f9f9; border-color: #ccc; }
+    .cluster-parent { background: #f9fff9; border-color: #007700; }
+    .cluster-child { border-color: #ccc; }
+    .h2-card { border-color: #ccc; }
+    .tactic-item { border-color: #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>◈ SEO_AUTOMATION</h1>
+  <span class="badge">SERP + AI</span>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- Groq Key -->
+    <div class="sidebar-section">
+      <label>Groq API Key</label>
+      <input type="password" id="groqKey" placeholder="gsk_..." />
+    </div>
+
+    <!-- DataForSEO credentials (collapsible) -->
+    <div class="dfs-toggle" id="dfsToggle" onclick="toggleDfs()">
+      <span class="dfs-toggle-lbl">
+        <span class="dfs-status-dot" id="dfsDot"></span>
+        DataForSEO (optional)
+      </span>
+      <span class="dfs-chevron" id="dfsChevron">&#9654;</span>
+    </div>
+    <div class="dfs-body" id="dfsBody">
+      <div class="dfs-row">
+        <div>
+          <span class="dfs-field-lbl">Login / Email</span>
+          <input type="text" id="dfsLogin" placeholder="user@domain.com" style="font-size:11px" />
+        </div>
+        <div>
+          <span class="dfs-field-lbl">Password</span>
+          <input type="password" id="dfsPassword" placeholder="password" style="font-size:11px" />
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);line-height:1.4">
+        Enables real search volume, CPC &amp; KD for gap keywords
+      </div>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabBtnKeywords" onclick="switchTab('keywords')">Keywords</button>
+      <button class="tab-btn" id="tabBtnAudit" onclick="switchTab('audit')">Site Audit</button>
+    </div>
+
+    <!-- KEYWORDS TAB -->
+    <div class="tab-panel active" id="tabKeywords">
+      <div class="sidebar-section">
+        <label>Keywords (one per line)</label>
+        <textarea id="kwInput" placeholder="content marketing strategy&#10;best crm software&#10;Salesforce&#10;seo tools for beginners&#10;HubSpot Inc&#10;how to rank on google"></textarea>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn secondary" style="flex:1" onclick="filterKeywords()">Filter</button>
+          <button class="btn" style="flex:1" onclick="runAnalysis()" id="runBtn" disabled>&#9654; Run</button>
+        </div>
+      </div>
+
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;padding:6px 6px 8px;">
+          Keywords <span id="kwCount" style="color:var(--accent)">0</span>
+        </div>
+      </div>
+
+      <div class="kw-list" id="kwList">
+        <div style="text-align:center;padding:24px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">
+          Paste keywords &#8594; Filter
+        </div>
+      </div>
+    </div>
+
+    <!-- SITE AUDIT TAB -->
+    <div class="tab-panel" id="tabAudit">
+      <div class="sidebar-section">
+        <label>Client Website URL</label>
+        <input type="text" id="siteUrl" placeholder="https://example.com" />
+        <div style="margin-top:8px">
+          <button class="btn" onclick="scanSite()" id="scanBtn">&#9670; Scan &amp; Analyze</button>
+        </div>
+      </div>
+
+      <div style="padding:6px 10px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">Blog URLs Found</span>
+        <span id="auditBlogCount" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent)">—</span>
+      </div>
+
+      <div class="audit-blog-list" id="auditBlogList">
+        <div style="text-align:center;padding:24px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">
+          Enter URL &#8594; Scan
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <div class="empty-state" id="emptyState">
+      <div style="font-size:32px;margin-bottom:8px;">&#9672;</div>
+      <div>Select a keyword and click Run</div>
+      <div style="color:#444;margin-top:4px">SERP data + AI analysis will appear here</div>
+    </div>
+
+    <div id="results" style="display:none">
+      <div class="captcha-alert" id="captchaAlert">
+        &#9888; CAPTCHA detected. Please solve it in the browser window and click <strong>Continue</strong> below.
+        <br><br>
+        <button class="btn" style="width:auto;padding:6px 16px;" onclick="hideCaptcha()">Continue After Solving</button>
+      </div>
+
+      <div class="status-bar" id="statusBar" style="display:none">
+        <div class="dot"></div>
+        <span id="statusText">Analyzing...</span>
+      </div>
+
+      <button class="print-btn" onclick="window.print()">&#9113; PRINT / PDF</button>
+
+      <!-- ── OVERVIEW ── -->
+      <div class="card" id="overviewSection" style="display:none">
+        <div class="section-title">Keyword Overview</div>
+        <div class="scores-row" id="scoresRow"></div>
+        <div id="intentRow" style="margin-bottom:10px"></div>
+        <div id="intentExplain" style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px"></div>
+        <div id="diffReason" style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px"></div>
+        <div id="oppReason"  style="font-size:11px;color:var(--muted);line-height:1.5"></div>
+      </div>
+
+      <!-- ── META / BLUEPRINT HEADER ── -->
+      <div class="card" id="metaSection" style="display:none">
+        <div class="section-title">Content Blueprint — Meta & Hook</div>
+        <div class="two-col" style="margin-bottom:10px">
+          <div class="meta-box">
+            <div class="meta-lbl">Meta Title</div>
+            <div class="meta-val" id="metaTitle">—</div>
+          </div>
+          <div class="meta-box">
+            <div class="meta-lbl">Meta Description</div>
+            <div class="meta-val" id="metaDesc">—</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="meta-box">
+            <div class="meta-lbl">H1 Tag</div>
+            <div class="meta-val" id="metaH1">—</div>
+          </div>
+          <div class="meta-box">
+            <div class="meta-lbl">URL Slug</div>
+            <div class="meta-val meta-slug" id="metaSlug">—</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;border-left:2px solid var(--accent);padding-left:10px;font-size:12px;color:var(--muted);font-style:italic;line-height:1.6" id="metaHook"></div>
+      </div>
+
+      <!-- ── SERP ── -->
+      <div class="card" id="serpSection" style="display:none">
+        <div class="section-title">Top 10 SERP Positions</div>
+        <div id="serpResults"></div>
+      </div>
+
+      <!-- ── KEYWORD VARIATIONS ── -->
+      <div class="card" id="varSection" style="display:none">
+        <div class="section-title">Keyword Variations</div>
+        <div class="pill-grid" id="kwVariations"></div>
+      </div>
+
+      <!-- ── BLOG CLUSTER ── -->
+      <div class="card" id="clusterSection" style="display:none">
+        <div class="section-title">Topic Cluster — Parent &amp; Child Blog Architecture</div>
+        <div id="blogCluster"></div>
+      </div>
+
+      <!-- ── COMPETITORS ── -->
+      <div class="card" id="compSection" style="display:none">
+        <div class="section-title">Competitor Gap Analysis</div>
+        <div id="compResults"></div>
+      </div>
+
+      <!-- ── H2 STRUCTURE ── -->
+      <div class="card" id="h2Section" style="display:none">
+        <div class="section-title">H2 Structure — Content Zones</div>
+        <div class="h2-grid" id="h2Results"></div>
+      </div>
+
+      <!-- ── FAQ ── -->
+      <div class="card" id="faqSection" style="display:none">
+        <div class="section-title">FAQ / PAA Schema Content</div>
+        <div id="faqResults"></div>
+      </div>
+
+      <!-- ── ON-PAGE + OFF-PAGE ── -->
+      <div class="two-col">
+        <div class="card" id="onPageSection" style="display:none">
+          <div class="section-title">On-Page SEO Checklist</div>
+          <div id="onPageResults"></div>
+        </div>
+        <div class="card" id="offPageSection" style="display:none">
+          <div class="section-title">Link Building Tactics</div>
+          <div id="offPageResults"></div>
+        </div>
+      </div>
+
+      <!-- ── RECS + TIMELINE ── -->
+      <div class="two-col">
+        <div class="card" id="recSection" style="display:none">
+          <div class="section-title">Prioritised SEO Recommendations</div>
+          <div id="recResults"></div>
+        </div>
+        <div class="card" id="timelineSection" style="display:none">
+          <div class="section-title">Ranking Timeline</div>
+          <div id="timelineResults"></div>
+        </div>
+      </div>
+
+    </div><!-- /results -->
+
+    <!-- ── SITE AUDIT RESULTS ── -->
+    <div id="siteAuditResults" style="display:none">
+
+      <!-- Audit empty state -->
+      <div class="empty-state" id="auditEmptyState">
+        <div style="font-size:32px;margin-bottom:8px;">&#9670;</div>
+        <div>Enter a client website URL and click Scan</div>
+        <div style="color:#444;margin-top:4px">Content coverage + gap analysis will appear here</div>
+      </div>
+
+      <!-- Audit active content (hidden until scan completes) -->
+      <div id="auditContent" style="display:none">
+        <div class="status-bar" id="auditStatusBar" style="display:none">
+          <div class="dot"></div>
+          <span id="auditStatusText">Scanning...</span>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">&#9113; PRINT / PDF</button>
+
+        <!-- Summary stats + strategy -->
+        <div class="card" id="auditStrategySec" style="display:none">
+          <div class="section-title">Site Audit — Content Strategy</div>
+          <div class="audit-stats-row">
+            <div class="audit-stat">
+              <div class="score-lbl">Total Pages</div>
+              <div class="score-val blue" id="auditTotalPages">—</div>
+            </div>
+            <div class="audit-stat">
+              <div class="score-lbl">Blog Posts</div>
+              <div class="score-val green" id="auditBlogCountMain">—</div>
+            </div>
+            <div class="audit-stat">
+              <div class="score-lbl">Topics Covered</div>
+              <div class="score-val blue" id="auditTopicCount">—</div>
+            </div>
+            <div class="audit-stat">
+              <div class="score-lbl">Gaps Found</div>
+              <div class="score-val orange" id="auditGapCount">—</div>
+            </div>
+          </div>
+          <div class="strategy-box" id="auditStrategyBox" style="display:none"></div>
+        </div>
+
+        <!-- Covered Topics -->
+        <div class="card" id="auditCoverageSec" style="display:none">
+          <div class="section-title">Content Already Covered</div>
+          <div id="auditCoverageList"></div>
+        </div>
+
+        <!-- Content Gaps -->
+        <div class="card" id="auditGapsSec" style="display:none">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <span>Content Gaps — Opportunities to Cover</span>
+            <button class="gap-btn accent-btn" id="fetchAllDfsBtn" onclick="fetchAllDfsMetrics()" style="display:none">&#8634; Fetch Search Metrics (DataForSEO)</button>
+          </div>
+          <div id="auditGapsList"></div>
+        </div>
+      </div><!-- /auditContent -->
+
+    </div><!-- /siteAuditResults -->
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+const API = 'http://localhost:5000';
+let keywords = [];
+let selectedKw = null;
+
+/* ── AUDIT STATE ── */
+let currentTab = 'keywords';
+let hasKeywordResults = false;
+let siteData = null;
+let gapAnalysis = null;
+let dfsMetrics = {};
+
+/* ── helpers ── */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function show(id){ const e=document.getElementById(id); if(e) e.style.display='block'; }
+function hide(id){ const e=document.getElementById(id); if(e) e.style.display='none'; }
+function html(id,h){ const e=document.getElementById(id); if(e) e.innerHTML=h; }
+
+/* ── filter ── */
+async function filterKeywords() {
+  const raw = document.getElementById('kwInput').value;
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  if (!lines.length) return alert('Enter at least one keyword');
+  const res = await fetch(`${API}/api/filter-keywords`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keywords:lines})});
+  keywords = await res.json();
+  renderKwList();
+}
+
+
+function renderKwList() {
+  const count = keywords.filter(k=>!k.flagged).length;
+  document.getElementById('kwCount').textContent = `${count}/${keywords.length}`;
+  html('kwList', keywords.map((k,i)=>`
+    <div class="kw-item ${k.flagged?'flagged':''}" id="kwitem_${i}" onclick="${k.flagged ? '' : `selectKw(${i})`}">
+      <span class="kw-text" title="${esc(k.keyword)}">${esc(k.keyword)}</span>
+      <span class="kw-tag ${k.flagged?(k.reason==='company'?'tag-company':'tag-generic'):'tag-ok'}">
+        ${k.flagged?k.reason:'ok'}
+      </span>
+    </div>`).join(''));
+}
+
+
+function selectKw(i) {
+  if (keywords[i].flagged) return;
+  selectedKw = i;
+  document.querySelectorAll('.kw-item').forEach(el=>el.classList.remove('selected'));
+  document.getElementById(`kwitem_${i}`).classList.add('selected');
+  document.getElementById('runBtn').disabled = false;
+}
+
+/* ── run ── */
+async function runAnalysis() {
+  if (selectedKw===null) return alert('Select a keyword');
+  const groqKey = document.getElementById('groqKey').value.trim();
+  if (!groqKey) return alert('Enter your Groq API key');
+
+  const keyword = keywords[selectedKw].keyword;
+  hide('emptyState');
+  hide('siteAuditResults');
+  show('results');
+  hasKeywordResults = true;
+  document.getElementById('runBtn').disabled = true;
+  hideSections();
+  setStatus(`Scraping SERP for: ${keyword}`);
+
+  let serpData=[], paa=[];
+  try {
+    const r = await fetch(`${API}/api/scrape-serp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword})});
+    const d = await r.json();
+    if (d.captcha) {
+      show('captchaAlert');
+      hide('statusBar');
+      document.getElementById('runBtn').disabled=false;
+      return;
+    }
+    serpData = d.serp||[];
+    paa      = d.paa||[];
+    renderSerp(serpData.slice(0,10));
+    show('serpSection');
+  } catch(e) { setStatus('SERP scrape failed — AI only mode'); }
+
+  setStatus('Running deep AI analysis via Groq (Llama 3.3 70B)...');
+  try {
+    const r = await fetch(`${API}/api/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword,serp:serpData,paa,groq_key:groqKey})});
+    const d = await r.json();
+    if (d.error){ setStatus(`Error: ${d.error}`); document.getElementById('runBtn').disabled=false; return; }
+    renderAnalysis(d);
+  } catch(e){ setStatus(`Error: ${e.message}`); }
+
+  hide('statusBar');
+  document.getElementById('runBtn').disabled=false;
+}
+
+function setStatus(msg){
+  show('statusBar');
+  document.getElementById('statusText').textContent=msg;
+}
+function hideSections(){
+  ['overviewSection','metaSection','serpSection','varSection','clusterSection',
+   'compSection','faqSection','h2Section','recSection','onPageSection',
+   'offPageSection','timelineSection','captchaAlert'].forEach(hide);
+}
+function hideCaptcha(){ hide('captchaAlert'); runAnalysis(); }
+
+/* ── SERP ── */
+function renderSerp(items){
+  html('serpResults', items.map(r=>`
+    <div class="serp-item">
+      <div class="serp-row">
+        <div class="serp-pos">${r.position}</div>
+        <div style="flex:1;min-width:0">
+          <div class="serp-title">${esc(r.title)}</div>
+          <div class="serp-url">${esc(r.url.substring(0,90))}${r.url.length>90?'…':''}</div>
+          <div class="serp-desc">${esc(r.description||'—')}</div>
+        </div>
+      </div>
+    </div>`).join(''));
+}
+
+/* ── MAIN RENDER ── */
+function renderAnalysis(d){
+  const ov  = d.keyword_overview || {};
+  const bp  = d.content_blueprint || {};
+  const op  = d.on_page_seo || {};
+  const offp= d.off_page_seo || {};
+  const tl  = d.ranking_timeline || {};
+  const cp  = d.content_promotion || {};
+
+  /* ── OVERVIEW ── */
+  const diffScore = ov.difficulty_score||0;
+  const oppScore  = ov.opportunity_score||0;
+  const wc        = ov.word_count_target||0;
+  const diffColor = diffScore>=70?'red':diffScore>=40?'orange':'green';
+  const oppColor  = oppScore>=70?'green':oppScore>=40?'orange':'red';
+
+  html('scoresRow',`
+    <div class="score-box"><div class="score-lbl">Difficulty</div><div class="score-val ${diffColor}">${diffScore}</div><div class="score-sub">${esc(ov.difficulty||'')}</div></div>
+    <div class="score-box"><div class="score-lbl">Opportunity</div><div class="score-val ${oppColor}">${oppScore}</div></div>
+    <div class="score-box"><div class="score-lbl">Target Words</div><div class="score-val blue">${wc?wc.toLocaleString():'—'}</div></div>
+    <div class="score-box"><div class="score-lbl">Content Type</div><div class="score-val" style="font-size:13px;padding-top:4px">${esc(ov.content_type||'—')}</div></div>
+  `);
+
+  const intent=(ov.search_intent||'unknown').toLowerCase();
+  html('intentRow',`
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">INTENT</span>
+    <span class="intent-badge intent-${intent}">${intent}</span>
+    ${(ov.serp_features||[]).map(f=>`<span class="chip accent2" style="margin-left:6px">${esc(f)}</span>`).join('')}
+  `);
+  html('intentExplain', esc(ov.intent_explanation||''));
+  html('diffReason', ov.difficulty_reasoning ? `<strong style="color:var(--muted)">Difficulty:</strong> ${esc(ov.difficulty_reasoning)}`:'');
+  html('oppReason',  ov.opportunity_reasoning? `<strong style="color:var(--muted)">Opportunity:</strong> ${esc(ov.opportunity_reasoning)}`:'');
+  show('overviewSection');
+
+  /* ── META ── */
+  html('metaTitle', esc(bp.meta_title||ov.meta_title||'—'));
+  html('metaDesc',  esc(bp.meta_description||ov.meta_description||'—'));
+  html('metaH1',    esc(bp.h1_tag||'—'));
+  html('metaSlug',  '/' + esc(bp.url_slug||'—'));
+  html('metaHook',  bp.introduction_hook ? `"${esc(bp.introduction_hook)}"` : '');
+  show('metaSection');
+
+  /* ── KEYWORD VARIATIONS ── */
+  const vars = d.keyword_variations||[];
+  if (vars.length){
+    html('kwVariations', vars.map(v=>{
+      const kw   = typeof v==='object' ? (v.kw||v.keyword||JSON.stringify(v)) : v;
+      const type = typeof v==='object' ? (v.type||'') : '';
+      const rat  = typeof v==='object' ? (v.rationale||'') : '';
+      return `<span class="pill" title="${esc(rat)}">${esc(kw)}${type?`<span class="pill-type">${esc(type)}</span>`:''}</span>`;
+    }).join(''));
+    show('varSection');
+  }
+
+  /* ── BLOG CLUSTER ── */
+  const bc = d.blog_cluster;
+  if (bc){
+    const p  = bc.parent||{};
+    const cs = bc.children||[];
+    const parentTitle = typeof p==='string' ? p : (p.title||'');
+    const parentSlug  = p.slug||'';
+    const parentWC    = p.target_word_count||0;
+    const parentAngle = p.primary_angle||'';
+    const parentSecs  = p.key_sections||[];
+
+    html('blogCluster',`
+      <div class="cluster-parent">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:0.1em;margin-bottom:6px">PILLAR POST</div>
+        <div class="cluster-parent-title">${esc(parentTitle)}</div>
+        <div class="cluster-parent-meta">
+          ${parentWC?`<span>Words: <span>${parentWC.toLocaleString()}</span></span>`:''}
+          ${parentSlug?`<span>Slug: <span>/${esc(parentSlug)}</span></span>`:''}
+        </div>
+        ${parentAngle?`<div class="cluster-parent-angle">${esc(parentAngle)}</div>`:''}
+        ${parentSecs.length?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">${parentSecs.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}</div>`:''}
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.1em;margin-bottom:8px">CHILD POSTS (${cs.length})</div>
+      <div class="cluster-children-grid">
+        ${cs.map((c,i)=>{
+          const title  = typeof c==='string'?c:(c.title||'');
+          const slug   = c.slug||'';
+          const wc2    = c.target_word_count||0;
+          const fkw    = c.focus_keyword||'';
+          const angle  = c.angle||'';
+          const anchor = c.internal_link_anchor||'';
+          return `<div class="cluster-child">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">#${i+1}</div>
+            <div class="cluster-child-title">${esc(title)}</div>
+            ${slug?`<div class="cluster-child-slug">/${esc(slug)}</div>`:''}
+            ${angle?`<div class="cluster-child-angle">${esc(angle)}</div>`:''}
+            <div class="cluster-child-meta">
+              ${wc2?`<span>📝 ${wc2.toLocaleString()} words</span>`:''}
+              ${fkw?`<span>🎯 ${esc(fkw)}</span>`:''}
+            </div>
+            ${anchor?`<div class="cluster-child-anchor">Anchor: <em>"${esc(anchor)}"</em></div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    `);
+    show('clusterSection');
+  }
+
+  /* ── COMPETITORS ── */
+  const comps = d.competitor_insights||[];
+  if (comps.length){
+    html('compResults', comps.map((c,i)=>{
+      const rank    = c.rank||i+1;
+      const domain  = c.domain||'—';
+      const title   = c.title||'';
+      const strength= c.strength||c.gap_opportunity||'—';
+      const weakness= c.weakness||'—';
+      const gap     = c.gap_opportunity||c.gap||'—';
+      const rankCls = rank===1?'':rank===2?' r2':rank===3?' r3':'';
+      return `<div class="comp-item">
+        <div class="comp-header">
+          <div class="comp-rank${rankCls}">${rank}</div>
+          <div>
+            <div class="comp-domain">${esc(domain)}</div>
+            ${title?`<div class="comp-title-text">${esc(title)}</div>`:''}
+          </div>
+        </div>
+        <div class="comp-grid">
+          <div><div class="comp-label">Strength</div><div class="comp-val">${esc(strength)}</div></div>
+          <div><div class="comp-label">Weakness</div><div class="comp-val">${esc(weakness)}</div></div>
+          <div><div class="comp-label">Your Opportunity</div><div class="comp-val gap">${esc(gap)}</div></div>
+        </div>
+      </div>`;
+    }).join(''));
+    show('compSection');
+  }
+
+  /* ── H2 STRUCTURE ── */
+  const h2s = (bp.h2_structure||d.h2_structure||[]);
+  if (h2s.length){
+    html('h2Results', h2s.map(h=>`
+      <div class="h2-card">
+        <div class="h2-zone">${esc(h.zone||'')}</div>
+        <div class="h2-heading">${esc(h.h2||'')}</div>
+        <div class="h2-purpose">${esc(h.purpose||'')}</div>
+        ${(h.key_points||[]).length?`<div class="h2-points">${h.key_points.map(p=>`<span class="h2-point">${esc(p)}</span>`).join('')}</div>`:''}
+        ${h.word_count?`<div class="h2-wc">~${h.word_count} words</div>`:''}
+      </div>`).join(''));
+    show('h2Section');
+  }
+
+  /* ── FAQ ── */
+  const faqs = d.faq||[];
+  if (faqs.length){
+    html('faqResults', faqs.map((f,i)=>`
+      <div class="faq-item" id="faq_${i}">
+        <div class="faq-q" onclick="toggleFaq(${i})">${esc(f.question)} <span>+</span></div>
+        <div class="faq-a">${esc(f.answer)}</div>
+      </div>`).join(''));
+    show('faqSection');
+  }
+
+  /* ── ON-PAGE SEO ── */
+  if (op && Object.keys(op).length){
+    let onHtml='';
+    if (op.keyword_density_target) onHtml+=`<div class="mini-section"><div class="mini-title">Keyword Density</div><span class="chip accent">${esc(op.keyword_density_target)}</span></div>`;
+    if ((op.primary_keyword_placements||[]).length) onHtml+=`<div class="mini-section"><div class="mini-title">KW Placements</div><div class="chip-row">${op.primary_keyword_placements.map(p=>`<span class="chip">${esc(p)}</span>`).join('')}</div></div>`;
+    if ((op.lsi_keywords_to_use||[]).length) onHtml+=`<div class="mini-section"><div class="mini-title">LSI Keywords</div><div class="chip-row">${op.lsi_keywords_to_use.map(k=>`<span class="chip accent2">${esc(k)}</span>`).join('')}</div></div>`;
+    if ((op.schema_markup||[]).length) onHtml+=`<div class="mini-section"><div class="mini-title">Schema Types</div><div class="chip-row">${op.schema_markup.map(s=>`<span class="chip accent">${esc(s)}</span>`).join('')}</div></div>`;
+    if (op.internal_linking_strategy) onHtml+=`<div class="mini-section"><div class="mini-title">Internal Linking</div><div style="font-size:11px;color:var(--muted);line-height:1.5">${esc(op.internal_linking_strategy)}</div></div>`;
+    if (op.image_optimization) onHtml+=`<div class="mini-section"><div class="mini-title">Image Optimisation</div><div style="font-size:11px;color:var(--muted);line-height:1.5">${esc(op.image_optimization)}</div></div>`;
+    html('onPageResults', onHtml);
+    show('onPageSection');
+  }
+
+  /* ── OFF-PAGE SEO ── */
+  if (offp && Object.keys(offp).length){
+    let offHtml='';
+    if ((offp.link_building_tactics||[]).length){
+      offHtml+=offp.link_building_tactics.map(t=>`
+        <div class="tactic-item">
+          <div class="tactic-header">
+            <div class="tactic-name">${esc(t.tactic||'')}</div>
+            <div class="tactic-badges">
+              <span class="priority-tag prio-${t.difficulty||'Medium'}">${esc(t.difficulty||'')}</span>
+              <span class="priority-tag prio-${t.impact==='High'?'Critical':t.impact==='Medium'?'High':'Low'}">${esc(t.impact||'')} Impact</span>
+            </div>
+          </div>
+          <div class="tactic-desc">${esc(t.description||'')}</div>
+        </div>`).join('');
+    }
+    if ((offp.target_anchor_texts||[]).length){
+      offHtml+=`<div class="mini-section" style="margin-top:10px"><div class="mini-title">Target Anchors</div><div class="chip-row">${offp.target_anchor_texts.map(a=>`<span class="chip">${esc(a)}</span>`).join('')}</div></div>`;
+    }
+    if ((offp.outreach_ideas||[]).length){
+      offHtml+=`<div class="mini-section"><div class="mini-title">Outreach Ideas</div>${offp.outreach_ideas.map(o=>`<div style="font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border)">${esc(o)}</div>`).join('')}</div>`;
+    }
+    html('offPageResults', offHtml);
+    show('offPageSection');
+  }
+
+  /* ── SEO RECOMMENDATIONS ── */
+  const recs = d.seo_recommendations||[];
+  if (recs.length){
+    html('recResults', recs.map((r,i)=>{
+      const priority = typeof r==='object'?(r.priority||'Medium'):'Medium';
+      const tip      = typeof r==='object'?(r.tip||r):r;
+      return `<div class="rec-item">
+        <span class="rec-num">0${i+1}</span>
+        <span class="priority-tag prio-${priority}">${esc(priority)}</span>
+        <span>${esc(tip)}</span>
+      </div>`;
+    }).join(''));
+    show('recSection');
+  }
+
+  
+
+  /* ── RANKING TIMELINE ── */
+  if (tl && Object.keys(tl).length){
+    html('timelineResults',`
+      <div class="timeline-item"><div class="tl-period">Mo 1-3</div><div class="tl-text">${esc(tl.month_1_3||'—')}</div></div>
+      <div class="timeline-item"><div class="tl-period">Mo 3-6</div><div class="tl-text">${esc(tl.month_3_6||'—')}</div></div>
+      <div class="timeline-item"><div class="tl-period">Mo 6-12</div><div class="tl-text">${esc(tl.month_6_12||'—')}</div></div>
+    `);
+    show('timelineSection');
+  }
+}
+
+
+function toggleFaq(i){
+  const el=document.getElementById(`faq_${i}`);
+  const open=el.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(f=>f.classList.remove('open'));
+  if(!open) el.classList.add('open');
+}
+
+/* ── TAB SWITCHER ── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabBtnKeywords').classList.toggle('active', tab === 'keywords');
+  document.getElementById('tabBtnAudit').classList.toggle('active', tab === 'audit');
+  document.getElementById('tabKeywords').classList.toggle('active', tab === 'keywords');
+  document.getElementById('tabAudit').classList.toggle('active', tab === 'audit');
+
+  if (tab === 'audit') {
+    hide('emptyState');
+    hide('results');
+    show('siteAuditResults');
+    if (!gapAnalysis) {
+      show('auditEmptyState');
+      hide('auditContent');
+    } else {
+      hide('auditEmptyState');
+      show('auditContent');
+    }
+  } else {
+    hide('siteAuditResults');
+    if (hasKeywordResults) {
+      hide('emptyState');
+      show('results');
+    } else {
+      show('emptyState');
+      hide('results');
+    }
+  }
+}
+
+/* ── DATAFORSEO CREDENTIALS TOGGLE ── */
+function toggleDfs() {
+  const body = document.getElementById('dfsBody');
+  const chevron = document.getElementById('dfsChevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
+/* ── SCAN SITE ── */
+async function scanSite() {
+  const url = document.getElementById('siteUrl').value.trim();
+  if (!url) return alert('Enter a client website URL');
+  const groqKey = document.getElementById('groqKey').value.trim();
+  if (!groqKey) return alert('Enter your Groq API key — needed for gap analysis');
+
+  const scanBtn = document.getElementById('scanBtn');
+  scanBtn.disabled = true;
+  gapAnalysis = null;
+  dfsMetrics = {};
+
+  // Switch to audit tab and show loading state
+  switchTab('audit');
+  show('siteAuditResults');
+  hide('auditEmptyState');
+  show('auditContent');
+  hide('auditStrategySec');
+  hide('auditCoverageSec');
+  hide('auditGapsSec');
+  document.getElementById('fetchAllDfsBtn').style.display = 'none';
+  setAuditStatus('Discovering and scanning sitemap…');
+
+  // ── Step 1: scan sitemap ──
+  let scanResult;
+  try {
+    const r = await fetch(`${API}/api/scan-sitemap`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url})
+    });
+    scanResult = await r.json();
+    if (scanResult.error) {
+      setAuditStatus(`Error: ${scanResult.error}`);
+      scanBtn.disabled = false;
+      return;
+    }
+  } catch(e) {
+    setAuditStatus(`Scan failed: ${e.message}`);
+    scanBtn.disabled = false;
+    return;
+  }
+
+  siteData = scanResult;
+  const blogUrls = scanResult.blog_urls || [];
+  document.getElementById('auditBlogCount').textContent = scanResult.blog_count || 0;
+
+  // Populate sidebar URL list
+  html('auditBlogList', blogUrls.length
+    ? blogUrls.map(u => `<span class="audit-url-item" title="${esc(u)}">${esc(u.replace(/^https?:\/\/[^/]+/, ''))}</span>`).join('')
+    : '<div style="text-align:center;padding:16px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--muted)">No blog URLs detected</div>'
+  );
+
+  setAuditStatus(`Found ${scanResult.blog_count} blog posts. Running AI gap analysis via Groq…`);
+
+  // ── Step 2: AI gap analysis ──
+  let gapResult;
+  try {
+    const r = await fetch(`${API}/api/analyze-gaps`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ blog_urls: blogUrls, domain: scanResult.domain, groq_key: groqKey })
+    });
+    gapResult = await r.json();
+    if (gapResult.error) {
+      setAuditStatus(`Gap analysis error: ${gapResult.error}`);
+      scanBtn.disabled = false;
+      return;
+    }
+  } catch(e) {
+    setAuditStatus(`Gap analysis failed: ${e.message}`);
+    scanBtn.disabled = false;
+    return;
+  }
+
+  gapAnalysis = gapResult;
+  const covered = gapResult.covered_topics || [];
+  const gaps    = gapResult.content_gaps   || [];
+
+  // Stats row
+  document.getElementById('auditTotalPages').textContent   = scanResult.total_pages || '—';
+  document.getElementById('auditBlogCountMain').textContent = scanResult.blog_count  || '—';
+  document.getElementById('auditTopicCount').textContent   = covered.length;
+  document.getElementById('auditGapCount').textContent     = gaps.length;
+  show('auditStrategySec');
+
+  // Strategy summary
+  const stratBox = document.getElementById('auditStrategyBox');
+  if (gapResult.strategy_summary) {
+    stratBox.innerHTML = `<strong>Strategy Assessment</strong>${esc(gapResult.strategy_summary)}`;
+    stratBox.style.display = 'block';
+  }
+
+  // Render sections
+  renderAuditCoverage(covered);
+  renderAuditGaps(gaps);
+
+  // Show DFS button if credentials are filled in
+  const dfsLogin = document.getElementById('dfsLogin').value.trim();
+  const dfsPass  = document.getElementById('dfsPassword').value.trim();
+  if (dfsLogin && dfsPass) {
+    document.getElementById('fetchAllDfsBtn').style.display = 'inline-flex';
+  }
+
+  hide('auditStatusBar');
+  scanBtn.disabled = false;
+}
+
+function setAuditStatus(msg) {
+  show('auditStatusBar');
+  document.getElementById('auditStatusText').textContent = msg;
+}
+
+/* ── RENDER COVERAGE ── */
+function renderAuditCoverage(topics) {
+  if (!topics.length) return;
+  html('auditCoverageList', topics.map((t, i) => {
+    const samples = (t.sample_urls || []).slice(0, 6);
+    const urlsHtml = samples.map(u =>
+      `<a class="cov-url" href="${esc(u)}" target="_blank" title="${esc(u)}">${esc(u.replace(/^https?:\/\/[^/]+/, ''))}</a>`
+    ).join('');
+    return `<div class="cov-cat" id="covcat_${i}" onclick="toggleCovCat(${i})">
+      <div class="cov-cat-header">
+        <div class="cov-cat-name">${esc(t.category || '')}</div>
+        <div class="cov-cat-count">${t.post_count || 0} posts &#9662;</div>
+      </div>
+      <div class="cov-cat-summary">${esc(t.coverage_summary || '')}</div>
+      ${urlsHtml ? `<div class="cov-cat-urls" id="covurls_${i}">${urlsHtml}</div>` : ''}
+    </div>`;
+  }).join(''));
+  show('auditCoverageSec');
+}
+
+function toggleCovCat(i) {
+  document.getElementById(`covcat_${i}`).classList.toggle('expanded');
+}
+
+/* ── RENDER GAPS ── */
+function renderAuditGaps(gaps) {
+  if (!gaps.length) return;
+  html('auditGapsList', gaps.map((g, i) => {
+    const priority = g.priority || 'Medium';
+    const kws = g.suggested_keywords || [];
+    const prioCls = priority === 'High' ? 'prio-Critical' : priority === 'Medium' ? 'prio-High' : 'prio-Low';
+
+    const kwPills = kws.map((kw, ki) => {
+      const m = dfsMetrics[kw];
+      const volTxt = m ? (m.volume >= 1000 ? (m.volume/1000).toFixed(1)+'k' : m.volume) : '';
+      const kdTxt  = m ? `KD:${m.kd || 0}` : '';
+      return `<span class="gap-kw${m ? ' has-metrics' : ''}"
+        id="gkw_${i}_${ki}"
+        title="Click to add to keyword queue"
+        onclick="addKwToQueue('${esc(kw)}')"
+      >${esc(kw)}${m ? `<span class="kw-vol">${volTxt}</span>` : ''}</span>`;
+    }).join('');
+
+    return `<div class="gap-item">
+      <div class="gap-header">
+        <div class="gap-topic">${esc(g.topic || '')}</div>
+        <span class="priority-tag ${prioCls}">${esc(priority)}</span>
+        <span class="gap-type">${esc(g.content_type || '')}</span>
+      </div>
+      <div class="gap-rationale">${esc(g.rationale || '')}</div>
+      <div class="gap-kw-row" id="gkwrow_${i}">${kwPills}</div>
+      <div class="gap-actions">
+        <button class="gap-btn" onclick="addAllGapKws(${i})">+ Add All to Queue</button>
+        <button class="gap-btn" onclick="runFirstGapKw(${i})">&#9654; Analyze Top Keyword</button>
+      </div>
+    </div>`;
+  }).join(''));
+  show('auditGapsSec');
+}
+
+/* ── ADD KEYWORD(S) TO QUEUE ── */
+async function addKwToQueue(kw) {
+  const textarea = document.getElementById('kwInput');
+  const lines = textarea.value.trim()
+    ? textarea.value.trim().split('\n').map(l => l.trim()).filter(Boolean)
+    : [];
+  if (!lines.includes(kw)) {
+    lines.push(kw);
+    textarea.value = lines.join('\n');
+  }
+  switchTab('keywords');
+  await filterKeywords();
+}
+
+async function addAllGapKws(gapIdx) {
+  if (!gapAnalysis) return;
+  const gap = (gapAnalysis.content_gaps || [])[gapIdx];
+  if (!gap) return;
+  const textarea = document.getElementById('kwInput');
+  const lines = textarea.value.trim()
+    ? textarea.value.trim().split('\n').map(l => l.trim()).filter(Boolean)
+    : [];
+  (gap.suggested_keywords || []).forEach(kw => {
+    if (!lines.includes(kw)) lines.push(kw);
+  });
+  textarea.value = lines.join('\n');
+  switchTab('keywords');
+  await filterKeywords();
+}
+
+async function runFirstGapKw(gapIdx) {
+  if (!gapAnalysis) return;
+  const gap = (gapAnalysis.content_gaps || [])[gapIdx];
+  if (!gap || !(gap.suggested_keywords || []).length) return;
+  const kw = gap.suggested_keywords[0];
+  await addKwToQueue(kw);
+  const idx = keywords.findIndex(k => k.keyword === kw && !k.flagged);
+  if (idx !== -1) {
+    selectKw(idx);
+    runAnalysis();
+  }
+}
+
+/* ── DATAFORSEO METRICS FOR ALL GAP KEYWORDS ── */
+async function fetchAllDfsMetrics() {
+  if (!gapAnalysis) return;
+  const login    = document.getElementById('dfsLogin').value.trim();
+  const password = document.getElementById('dfsPassword').value.trim();
+  if (!login || !password) {
+    // Auto-open the credentials panel and alert
+    document.getElementById('dfsBody').classList.add('open');
+    document.getElementById('dfsChevron').style.transform = 'rotate(90deg)';
+    return alert('Enter your DataForSEO login and password in the credentials panel above');
+  }
+
+  const allKws = [];
+  (gapAnalysis.content_gaps || []).forEach(g => {
+    (g.suggested_keywords || []).forEach(kw => {
+      if (!allKws.includes(kw)) allKws.push(kw);
+    });
+  });
+  if (!allKws.length) return;
+
+  const btn = document.getElementById('fetchAllDfsBtn');
+  btn.textContent = '⏳ Fetching…';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API}/api/dataforseo-keywords`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ keywords: allKws, login, password })
+    });
+    const data = await r.json();
+    if (data.error) {
+      alert(`DataForSEO error: ${data.error}`);
+      btn.textContent = '↻ Retry Metrics';
+      btn.disabled = false;
+      return;
+    }
+    dfsMetrics = data;
+    document.getElementById('dfsDot').classList.add('connected');
+    // Re-render gaps with enriched metrics
+    renderAuditGaps(gapAnalysis.content_gaps || []);
+    btn.textContent = '✓ Metrics Loaded';
+    btn.disabled = false;
+  } catch(e) {
+    alert(`DataForSEO request failed: ${e.message}`);
+    btn.textContent = '↻ Retry Metrics';
+    btn.disabled = false;
+  }
+}
+
+
+</script>
+</body>
+</html>
